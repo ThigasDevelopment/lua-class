@@ -1,0 +1,6 @@
+<api-class>
+    <!-- SCRIPT's SRC's -->
+    <script src = 'class.lua' type = 'shared' cache = 'false'/>
+    <!-- SCRIPT's TEST's -->
+    <script src = '__tests__/example.lua'/>
+</api-class>
