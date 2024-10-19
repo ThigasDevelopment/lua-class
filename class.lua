@@ -1,39 +1,71 @@
-function new (name)
-    return function (...)
-        local object = _G[name];
-
-        if (not object) then
-            error ('Class ' .. name .. ' not found.', 2);
-        end
-
-        if (object.__loaded) then
-            return false;
-        end
-
-        if (object['constructor']) and not (type (object['constructor']) ~= 'function') then
-            object:constructor (...);
-
-            _G[name].__loaded = true;
-        end
-
-        return object;
+local function create (name, struct, super)
+    if (_G[name]) then
+        error ('Class ' .. name .. ' already exists.');
     end
+
+    local newClass = struct;
+    newClass.__name, newClass.__loaded = name, false;
+
+    if (super) then
+        newClass.__super = super;
+
+        setmetatable (newClass, { __index = super });
+    end
+
+    _G[name] = newClass;
+
+    return _G[name];
 end
 
 function class (name)
-    return function (methods)
-        if (_G[name]) then
-            error ('Class ' .. name .. ' already exists.', 2);
+    local modifiers = {
+        extends = function (self, super)
+            return function (methods)
+                return create (name, methods, _G[super])
+            end
+        end;
+    };
+
+    return setmetatable ({ },
+        {
+            __index = function (self, key)
+                if (key ~= 'constructor') and (modifiers[key]) then
+                    return modifiers[key];
+                end
+
+                if (_G[name]) then
+                    return _G[name][key];
+                end
+                    
+                return false;
+            end;
+
+            __call = function (self, ...)
+                if (_G[name]) then
+                    return false;
+                end
+
+                return create (name, ...);
+            end;
+        }
+    );
+end
+
+function new (name)
+    if (not _G[name]) then
+        return false;
+    end
+
+    if (_G[name].__loaded) then
+        return _G[name];
+    end
+
+    return function (...)
+        if (_G[name]['constructor']) then
+            _G[name]:constructor (...);
+
+            _G[name].__loaded = true;
         end
-
-        local newClass = { };
-        newClass.__name, newClass.__index, newClass.__loaded = name, newClass, false;
-
-        for method, callback in pairs (methods) do
-            newClass[method] = callback;
-        end
-
-        _G[name] = setmetatable ({ }, newClass);
 
         return _G[name];
     end
