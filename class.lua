@@ -9,6 +9,12 @@ local function create (name, struct, super)
     if (super) then
         newClass.__super = super;
 
+        newClass.super = function (self, ...)
+            if (self.__super) and (self.__super['constructor']) and not (type (self.__super['constructor']) ~= 'function') then
+                return self.__super['constructor'] (self, ...);
+            end
+        end
+
         setmetatable (newClass, { __index = super });
     end
 
@@ -21,7 +27,7 @@ function class (name)
     local modifiers = {
         extends = function (self, super)
             return function (methods)
-                return create (name, methods, _G[super])
+                return create (name, methods, _G[super]);
             end
         end;
     };
