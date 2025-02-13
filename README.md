@@ -1,15 +1,14 @@
-# 🚩 MTA Lua System Class.
+# 🚩 Lua System Class.
 
 ## Description
 A simple class system adapted to the lua language, using syntax from other languages.
 
 ## Installation
 ### Requirements
-- MTA:SA 1.6.0
+- Lua
 ### Download and Installation Instructions
 1. Clone or download the repository.
-2. Download MTA:SA to your machine: https://multitheftauto.com/
-3. Place this .lua in the resource you want to use.
+2. Place this .lua in the project you want to use.
 
 ## Example
 ### In this example, a people system was created.
