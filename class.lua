@@ -9,15 +9,17 @@ local function create (name, struct, super)
     newClass.__name = name;
 
     if (super) then
-        newClass.__super = super;
+       newClass.super = setmetatable (newClass, {
+            __index = super,
 
-        newClass.super = function (self, ...)
-            if (self.__super) and (self.__super['constructor']) and not (type (self.__super['constructor']) ~= 'function') then
-                return self.__super['constructor'] (self, ...);
-            end
-        end
-        
-        setmetatable (newClass, { __index = super });
+            __call = function (self, ...)
+                local constructorType = type (self.constructor);
+                if (constructorType ~= 'function') then
+                    error ('Class ' .. self.__name .. ' does not have a constructor.');
+                end
+                return self:constructor (...);
+            end,
+       });
     end
 
     classes[name] = newClass;
