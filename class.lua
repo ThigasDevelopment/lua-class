@@ -72,7 +72,7 @@ function new (name)
     return function (...)
         local constructorType = type (class['constructor']);
         if (constructorType == 'function') then
-            return class:constructor (...);
+            class:constructor (...);
         end
         return class;
     end
