@@ -1,10 +1,12 @@
+local classes = { };
+
 local function create (name, struct, super)
-    if (_G[name]) then
+    if (classes[name]) then
         error ('Class ' .. name .. ' already exists.');
     end
 
     local newClass = struct;
-    newClass.__name, newClass.__loaded = name, false;
+    newClass.__name = name;
 
     if (super) then
         newClass.__super = super;
@@ -14,22 +16,21 @@ local function create (name, struct, super)
                 return self.__super['constructor'] (self, ...);
             end
         end
-
+        
         setmetatable (newClass, { __index = super });
     end
 
-    _G[name] = newClass;
-
-    return _G[name];
+    classes[name] = newClass;
+    return classes[name];
 end
 
 function class (name)
     local modifiers = {
         extends = function (self, super)
             return function (methods)
-                return create (name, methods, _G[super]);
+                return create (name, methods, classes[super]);
             end
-        end;
+        end,
     };
 
     return setmetatable ({ },
@@ -39,40 +40,33 @@ function class (name)
                     return modifiers[key];
                 end
 
-                if (_G[name]) then
-                    return _G[name][key];
+                if (classes[name]) then
+                    return classes[name][key];
                 end
-                    
                 return false;
-            end;
+            end,
 
             __call = function (self, ...)
-                if (_G[name]) then
+                if (classes[name]) then
                     return false;
                 end
-
                 return create (name, ...);
-            end;
+            end,
         }
     );
 end
 
 function new (name)
-    if (not _G[name]) then
+    if (not classes[name]) then
         return false;
     end
 
-    if (_G[name].__loaded) then
-        return _G[name];
-    end
-
     return function (...)
-        if (_G[name]['constructor']) then
-            _G[name]:constructor (...);
+        if (classes[name]['constructor']) then
+            classes[name]:constructor (...);
 
-            _G[name].__loaded = true;
+            classes[name].__loaded = true;
         end
-
-        return _G[name];
+        return classes[name];
     end
 end
