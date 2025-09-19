@@ -72,3 +72,14 @@ function new (name)
         return classes[name];
     end
 end
+
+function bind (func, self)
+    local funcType = type (func);
+    if (funcType ~= 'function') then
+        return false;
+    end
+
+    return function (...)
+        return func (self, ...);
+    end
+end
