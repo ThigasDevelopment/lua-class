@@ -1,110 +1,173 @@
-# 🚩 Lua System Class.
+# 🚩 lua-class
 
-## Description
-A simple class system adapted to the lua language, using syntax from other languages.
+Um micro-sistema de classes para Lua que prioriza legibilidade e baixo atrito. Escreva classes, métodos e herança com uma sintaxe enxuta — sem precisar montar metatables manualmente a cada vez.
 
-## Installation
-### Requirements
-- Lua
-### Download and Installation Instructions
-1. Clone or download the repository.
-2. Place this .lua in the project you want to use.
+Por que usar?
+- ✨ Sintaxe simples: `class 'Nome' { ... }` e `class 'Filha' :extends 'Base' { ... }`.
+- ⚙️ Configuração zero: importe um único arquivo (`class.lua`) e use.
+- 🌍 Multiambiente: scripts Lua em geral e também MTA:SA.
 
-## Example
-### In this example, a people system was created.
+Observação: este sistema funciona como um “singleton por classe”: `new 'Nome' (...)` inicializa e retorna a própria tabela da classe. É comum armazenar em uma variável local: `local Nome = new 'Nome' (...)`.
+
+## 📦 Instalação
+1) Copie `class.lua` para o seu projeto.
+2) Requisite/importe no seu script (mecanismo padrão do seu ambiente).
+
+Pronto. Sem dependências externas.
+
+## 🔢 Exemplo 1 — Counter (contagem simples)
 ```lua
-class 'People' {
-    constructor = function (self, name, lastname)
-        self.name, self.lastname = name, lastname;
-
-        return self;
+class 'Counter' {
+    constructor = function (self, start)
+        self.value = start or 0
+        return self
     end;
 
-    getName = function (self)
-        return self.name;
-    end;
-
-    setName = function (self, newName)
-        self.name = (newName or self.name);
-
-        return true;
-    end;
-
-    getLastName = function (self)
-        return self.lastname;
-    end;
-
-    setLastName = function (self, newLastName)
-        self.lastname = (newLastName or self.lastname);
-
-        return true;
-    end;
-
-    getFullName = function (self)
-        return self.name .. ' ' .. self.lastname;
-    end;
-};
-
-new 'People' ('John', 'Wick'); -- Load Class.
-
-print (People:getName ()); -- John.
-print (People:getLastName ()); -- Wick.
-
-print (People:getFullName ()); -- John Wick.
-```
-### In this other example, we will create a Database manager.
-```lua
-class 'Database' {
-    constructor = function (self, type, path)
-        self.data, self.connection = { }, false;
-
-        self.avaliableTypes = {
-            ['mysql'] = true;
-            ['sqlite'] = true;
-        };
-
-        self.path, self.type = path, type;
-
-        self:connect ();
-
-        return self;
+    inc = function (self, n)
+        self.value = self.value + (n or 1)
+        return self.value
     end;
 
     get = function (self)
-        return self.connection;
-    end;
-
-    connect = function (self)
-        if (self:get ()) then
-            return false;
-        end
-
-        if (not self.avaliableTypes[self.type]) then
-            return false;
-        end
-
-        self.connection = dbConnect (self.type, self.path);
-
-        if (self:get ()) then
-            return true;
-        end
-
-        return false;
+        return self.value
     end;
 };
 
-new 'Database' ('sqlite', '__tests__/database.db');
-
-function getConnection () -- Exports this function.
-    return Database:get ();
-end
+local Counter = new 'Counter' (10)
+print(Counter:get())   -- 10
+print(Counter:inc())   -- 11
+print(Counter:inc(5))  -- 16
 ```
 
-## Contribution
-To contribute, follow the contributing guidelines and submit a pull request.
+## 📝 Exemplo 2 — Logger (níveis e formatação)
+```lua
+class 'Logger' {
+    constructor = function (self, level)
+        self.levels = { error = 1, warn = 2, info = 3, debug = 4 }
+        self.level  = self.levels[level or 'info']
+        return self
+    end;
 
-## License
-This project is licensed under the MIT License.
+    log = function (self, level, ...)
+        if self.levels[level] <= self.level then
+            print(string.format('[%s]', level:upper()), ...)
+        end
+    end;
 
-## Credits
-- Lead Developer: Thigas Development (draconzx).
+    error = function (self, ...)
+        self:log('error', ...)
+    end;
+    warn = function (self, ...)
+        self:log('warn', ...)
+    end;
+    info = function (self, ...)
+        self:log('info', ...)
+    end;
+    debug = function (self, ...)
+        self:log('debug', ...)
+    end;
+};
+
+local Logger = new 'Logger' ('debug')
+Logger:info('Hello')
+Logger:debug('a =', 42)
+```
+
+## 🔶 Exemplo 3 — Herança (Shape -> Rectangle)
+```lua
+class 'Shape' {
+    constructor = function (self, color)
+        self.color = color or 'black'
+        return self
+    end;
+
+    getColor = function (self)
+        return self.color
+    end;
+};
+
+class 'Rectangle' :extends 'Shape' {
+    constructor = function (self, color, w, h)
+        self:super(color)
+        self.w, self.h = w or 0, h or 0
+        return self
+    end;
+
+    area = function (self)
+        return self.w * self.h
+    end;
+};
+
+local Rectangle = new 'Rectangle' ('red', 3, 4)
+print(Rectangle:getColor()) -- red
+print(Rectangle:area())     -- 12
+```
+
+## 🔗 Exemplo 4 — bind (fechando contexto)
+O helper `bind(func, self)` (já disponível neste projeto) cria um closure que injeta `self` ao chamar a função — útil para callbacks e integração com bibliotecas de eventos.
+
+```lua
+class 'Emitter' {
+    constructor = function (self)
+        self.handlers = {}
+        return self
+    end;
+
+    on = function (self, name, fn)
+        self.handlers[name] = self.handlers[name] or {}
+        table.insert(self.handlers[name], fn)
+    end;
+
+    emit = function (self, name, ...)
+        local hs = self.handlers[name]; if not hs then return end
+        for _, fn in ipairs(hs) do fn(...) end
+    end;
+};
+
+local Emitter = new 'Emitter' ()
+
+class 'Greeter' {
+    constructor = function (self, name, emitter)
+        self.name = name
+        emitter:on('hello', bind(self.onHello, self))
+        return self
+    end;
+
+    onHello = function (self, from)
+        print(("Hi %s! I'm %s."):format(from, self.name))
+    end;
+};
+
+local Greeter = new 'Greeter' ('Alice', Emitter)
+Emitter:emit('hello', 'Bob')
+```
+
+> Nota: Em MTA:SA, você pode usar `bind(self.onClick, self)` com `addEventHandler`. Mas o `bind` é genérico e funciona em qualquer ambiente Lua.
+
+## API de Referência
+- `class(name)`
+  - Cria (ou retorna) um “builder” para definir a classe `name`.
+  - Formas de uso:
+    - `class 'Nome' { ... }`
+    - `class 'Filha' :extends 'Base' { ... }`
+
+- `new(name)`
+  - Retorna uma função que executa o `constructor` (se existir) e retorna a própria tabela da classe.
+  - Uso recomendado: `local Nome = new 'Nome' (args...)`
+
+- `bind(func, self)`
+  - Devolve uma função que chama `func(self, ...)`.
+
+## Dicas e Boas Práticas
+- Prefira `local Class = new 'Class' (...)` para evitar poluir o escopo global do seu script.
+- Mantenha métodos coesos: retorne `self` quando fizer sentido encadear operações.
+- Para herança, reutilize campos da base conforme necessário. Se quiser um helper `super`, você pode adicionar um método utilitário no seu projeto para padronizar a chamada do construtor da base.
+
+## Contribuição
+Sugestões e PRs são bem-vindos! Abra uma issue descrevendo sua ideia ou envie diretamente uma melhoria.
+
+## Licença
+MIT License.
+
+## Créditos
+- Lead Developer: Thigas Development (draconzx)
