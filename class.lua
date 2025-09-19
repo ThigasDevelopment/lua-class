@@ -23,6 +23,8 @@ local function create (name, struct, super)
             end
             return super;
         end
+
+        setmetatable (newClass, { __index = super });
     end
 
     classes[name] = newClass;
