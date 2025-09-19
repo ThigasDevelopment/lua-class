@@ -5,25 +5,29 @@ local function create (name, struct, super)
         error ('Class ' .. name .. ' already exists.');
     end
 
-    local newClass = struct;
-    newClass.__name = name;
+    local newClass = { };
+    newClass.__name, newClass.__super = name, super;
+
+    for key, value in pairs (struct) do
+        if (super) and (type (super[key]) == 'function') then
+            local method = super[key];
+            newClass[key] = function (self, ...)
+                local old = rawget (self, 'super');
+                self.super = function (t, ...)
+                    return method (self, ...);
+                end
+
+                local result = value (self, ...);
+                self.super = old;
+
+                return result;
+            end
+        else
+            newClass[key] = value;
+        end
+    end
 
     if (super) then
-        newClass.__super = super;
-
-        newClass.super = function (self, ...)
-            local super = self.__super;
-            if (type (super) ~= 'table') then
-                return false;
-            end
-
-            local constructorType = type (super.constructor);
-            if (constructorType == 'function') then
-                return super:constructor (...);
-            end
-            return super;
-        end
-
         setmetatable (newClass, { __index = super });
     end
 
@@ -43,7 +47,7 @@ function class (name)
     return setmetatable ({ },
         {
             __index = function (self, key)
-                if (key ~= 'constructor') and (modifiers[key]) then
+                if (modifiers[key]) then
                     return modifiers[key];
                 end
 
