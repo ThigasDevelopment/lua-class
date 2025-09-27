@@ -144,12 +144,71 @@ Emitter:emit('hello', 'Bob')
 
 > Nota: Em MTA:SA, você pode usar `bind(self.onClick, self)` com `addEventHandler`. Mas o `bind` é genérico e funciona em qualquer ambiente Lua.
 
+## 🔐 Interfaces e `implements`
+Este projeto pode suportar um sistema simples de interfaces (contratos) para validar que uma classe implementa certos métodos. A ideia básica:
+
+- `interface(name, { 'metodo1', 'metodo2' })` registra o contrato.
+- `class 'X' :implements 'IExample' { ... }` valida automaticamente que todos os métodos exigidos por `IExample` existem na classe (ou na sua super).
+- `implements('X', 'IExample')` é a versão separada que valida após a criação.
+
+Exemplo A — usando `:implements` no builder
+
+```lua
+-- declara interfaces
+interface('IPrintable', {
+    ['toString'] = 'function',
+})
+
+-- declara e valida na criação
+class 'Person' :implements 'IPrintable' {
+    constructor = function(self, name)
+        self.name = name
+        return self
+    end;
+
+    toString = function(self)
+        return 'Person: ' .. tostring(self.name)
+    end;
+};
+
+local Person = new 'Person' ('Ana')
+print(Person:toString()) -- Person: Ana
+```
+
+Exemplo B — usando `implements('Class', ...)` depois da declaração
+
+```lua
+interface('IComparable', {
+    ['compare'] = 'function',
+})
+
+class 'Point' {
+    constructor = function(self, x, y)
+        self.x, self.y = x, y
+        return self
+    end;
+
+    compare = function(self, other)
+        if self.x == other.x and self.y == other.y then return 0 end
+        return (self.x < other.x) and -1 or 1
+    end;
+};
+
+-- valida que Point cumpre IComparable
+implements('Point', 'IComparable')
+
+local Point = new 'Point' (1, 2)
+print(Point:compare(new 'Point'(2,2))) -- -1
+```
+
 ## API de Referência
 - `class(name)`
   - Cria (ou retorna) um “builder” para definir a classe `name`.
   - Formas de uso:
     - `class 'Nome' { ... }`
-    - `class 'Filha' :extends 'Base' { ... }`
+        - `class 'Filha' :extends 'Base' { ... }`
+        - `class 'Filha' :implements 'IExample' { ... }` (valida contrato)
+        - `class 'Filha' :extends 'Base' :implements 'I1' { ... }` (herança + interfaces)
 
 - `new(name)`
   - Retorna uma função que executa o `constructor` (se existir) e retorna a própria tabela da classe.
@@ -157,6 +216,12 @@ Emitter:emit('hello', 'Bob')
 
 - `bind(func, self)`
   - Devolve uma função que chama `func(self, ...)`.
+
+- `interface(name, methods)`
+    - Registra uma interface (contrato) com uma lista de métodos obrigatórios: `interface('IName', { 'm1', 'm2' })`.
+
+- `implements(className, ...)`
+    - Valida que a classe especificada implementa as interfaces fornecidas (ex.: `implements('Point', 'IComparable')`).
 
 ## Dicas e Boas Práticas
 - Prefira `local Class = new 'Class' (...)` para evitar poluir o escopo global do seu script.
