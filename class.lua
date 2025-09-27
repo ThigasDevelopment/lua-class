@@ -1,12 +1,12 @@
-local classes = { };
+local classes, interfaces = { }, { };
 
-local function create (name, struct, super)
+local function create (name, struct, super, implements)
     if (classes[name]) then
         error ('Class ' .. name .. ' already exists.');
     end
 
     local newClass = { };
-    newClass.__name, newClass.__super = name, super;
+    newClass.__name, newClass.__super, newClass.__implements = name, super, implements;
 
     for key, value in pairs (struct) do
         if (super) and (type (super[key]) == 'function') then
@@ -31,16 +31,40 @@ local function create (name, struct, super)
         setmetatable (newClass, { __index = super });
     end
 
+    if (newClass.__implements) then
+        local interface = interfaces[newClass.__implements];
+        if (not interface) then
+            error ('Interface ' .. newClass.__implements .. ' not found for class ' .. name .. '.');
+        end
+
+        for key, value in pairs (interface) do
+            if (type (newClass[key]) ~= value) then
+                error ('Class ' .. name .. ' does not implement interface ' .. newClass.__implements .. ' correctly. Field ' .. key .. ' is of type ' .. type (newClass[key]) .. ', expected ' .. value .. '.');
+            end
+        end
+    end
+
     classes[name] = newClass;
     return classes[name];
 end
 
 function class (name)
+    local options = {
+        super = nil,
+        implements = nil,
+    };
+
     local modifiers = {
         extends = function (self, super)
-            return function (methods)
-                return create (name, methods, classes[super]);
-            end
+            options.super = classes[super];
+            
+            return self;
+        end,
+
+        implements = function (self, interface)
+            options.implements = interface;
+
+            return self;
         end,
     };
 
@@ -57,14 +81,23 @@ function class (name)
                 return false;
             end,
 
-            __call = function (self, ...)
+            __call = function (self, methods)
                 if (classes[name]) then
                     return false;
                 end
-                return create (name, ...);
+                return create (name, methods, options.super, options.implements);
             end,
         }
     );
+end
+
+function interface (name, fields)
+    if (interfaces[name]) then
+        return interfaces[name];
+    end
+
+    interfaces[name] = fields;
+    return interfaces[name];
 end
 
 function new (name)
