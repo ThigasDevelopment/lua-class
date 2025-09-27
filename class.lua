@@ -31,15 +31,17 @@ local function create (name, struct, super, implements)
         setmetatable (newClass, { __index = super });
     end
 
-    if (newClass.__implements) then
-        local interface = interfaces[newClass.__implements];
-        if (not interface) then
-            error ('Interface ' .. newClass.__implements .. ' not found for class ' .. name .. '.');
-        end
+    if (#newClass.__implements > 0) then
+        for _, interfaceName in pairs (newClass.__implements) do
+            local interface = interfaces[interfaceName];
+            if (not interface) then
+                error ('Interface ' .. interfaceName .. ' not found.');
+            end
 
-        for key, value in pairs (interface) do
-            if (type (newClass[key]) ~= value) then
-                error ('Class ' .. name .. ' does not implement interface ' .. newClass.__implements .. ' correctly. Field ' .. key .. ' is of type ' .. type (newClass[key]) .. ', expected ' .. value .. '.');
+            for key, value in pairs (interface) do
+                if (type (newClass[key]) ~= value) then
+                    error ('Class ' .. name .. ' does not implement interface ' .. interfaceName .. ' correctly. Field "' .. key .. '" is of type "' .. type (newClass[key]) .. '", expected "' .. value .. '".');
+                end
             end
         end
     end
@@ -51,7 +53,7 @@ end
 function class (name)
     local options = {
         super = nil,
-        implements = nil,
+        implements = { },
     };
 
     local modifiers = {
@@ -62,7 +64,7 @@ function class (name)
         end,
 
         implements = function (self, interface)
-            options.implements = interface;
+            options.implements[#options.implements + 1] = interface;
 
             return self;
         end,
