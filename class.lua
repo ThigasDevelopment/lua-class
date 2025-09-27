@@ -74,7 +74,7 @@ function class (name)
             return self;
         end,
 
-        metamethod = function (self, metamethods)
+        metamethods = function (self, metamethods)
             options.metamethods = metamethods;
 
             return self;
