@@ -145,7 +145,7 @@ Emitter:emit('hello', 'Bob')
 > Nota: Em MTA:SA, você pode usar `bind(self.onClick, self)` com `addEventHandler`. Mas o `bind` é genérico e funciona em qualquer ambiente Lua.
 
 ## ✨ Exemplo 5 — Metamethods e constructor
-Um exemplo simples mostrando um `constructor` que imprime quando a classe é carregada e um metamethod `__tostring`.
+Um exemplo simples mostrando um `constructor` que imprime quando a classe é carregada e um metamethods `__tostring`.
 
 ```lua
 class 'Example' :metamethods {
