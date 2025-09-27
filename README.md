@@ -1,248 +1,160 @@
-# 🚩 lua-class
+# 🚩 lua-class — simples, direto e idiomático
 
-Um micro-sistema de classes para Lua que prioriza legibilidade e baixo atrito. Escreva classes, métodos e herança com uma sintaxe enxuta — sem precisar montar metatables manualmente a cada vez.
+Uma implementação pequena e prática para declarar classes em Lua com sintaxe enxuta. Ideal para scripts Lua e MTA:SA.
 
-Por que usar?
-- ✨ Sintaxe simples: `class 'Nome' { ... }` e `class 'Filha' :extends 'Base' { ... }`.
-- ⚙️ Configuração zero: importe um único arquivo (`class.lua`) e use.
-- 🌍 Multiambiente: scripts Lua em geral e também MTA:SA.
+Use recomendado: `local My = new 'My' (...)` (o sistema age como "singleton por classe").
 
-Observação: este sistema funciona como um “singleton por classe”: `new 'Nome' (...)` inicializa e retorna a própria tabela da classe. É comum armazenar em uma variável local: `local Nome = new 'Nome' (...)`.
+## ✨ Por que usar
 
-## 📦 Instalação
-1) Copie `class.lua` para o seu projeto.
-2) Requisite/importe no seu script (mecanismo padrão do seu ambiente).
+- Sintaxe concisa e fácil de ler
+- Suporte básico a herança com `:extends`
+- Helpers úteis: `bind` (callbacks), `:metamethods` e checagem simples de interfaces
 
-Pronto. Sem dependências externas.
+## 👨‍💻 Exemplos rápidos
 
-## 🔢 Exemplo 1 — Counter (contagem simples)
+1) Counter
+
 ```lua
 class 'Counter' {
-    constructor = function (self, start)
-        self.value = start or 0
-        return self
-    end;
+  constructor = function(self, start)
+    self.value = start or 0
+    return self
+  end;
 
-    inc = function (self, n)
-        self.value = self.value + (n or 1)
-        return self.value
-    end;
+  inc = function(self, n)
+    self.value = self.value + (n or 1)
+    return self.value
+  end;
 
-    get = function (self)
-        return self.value
-    end;
+  get = function(self)
+    return self.value
+  end;
 };
 
-local Counter = new 'Counter' (10)
-print(Counter:get())   -- 10
-print(Counter:inc())   -- 11
-print(Counter:inc(5))  -- 16
+local C = new 'Counter' (3)
+print(C:get(), C:inc()) -- 3 4
 ```
 
-## 📝 Exemplo 2 — Logger (níveis e formatação)
-```lua
-class 'Logger' {
-    constructor = function (self, level)
-        self.levels = { error = 1, warn = 2, info = 3, debug = 4 }
-        self.level  = self.levels[level or 'info']
-        return self
-    end;
+2) Herança (usar `super` para chamar o construtor da base)
 
-    log = function (self, level, ...)
-        if self.levels[level] <= self.level then
-            print(string.format('[%s]', level:upper()), ...)
-        end
-    end;
-
-    error = function (self, ...)
-        self:log('error', ...)
-    end;
-    warn = function (self, ...)
-        self:log('warn', ...)
-    end;
-    info = function (self, ...)
-        self:log('info', ...)
-    end;
-    debug = function (self, ...)
-        self:log('debug', ...)
-    end;
-};
-
-local Logger = new 'Logger' ('debug')
-Logger:info('Hello')
-Logger:debug('a =', 42)
-```
-
-## 🔶 Exemplo 3 — Herança (Shape -> Rectangle)
 ```lua
 class 'Shape' {
-    constructor = function (self, color)
-        self.color = color or 'black'
-        return self
-    end;
+  constructor = function(self, c)
+    self.color = c
+    return self
+  end;
 
-    getColor = function (self)
-        return self.color
-    end;
+  getColor = function(self)
+    return self.color
+  end;
 };
 
-class 'Rectangle' :extends 'Shape' {
-    constructor = function (self, color, w, h)
-        self:super(color)
-        self.w, self.h = w or 0, h or 0
-        return self
-    end;
+class 'Rect' :extends 'Shape' {
+  constructor = function(self, c, w, h)
+    self:super(c)
+    self.w, self.h = w, h
+    return self
+  end;
 
-    area = function (self)
-        return self.w * self.h
-    end;
+  area = function(self)
+    return self.w * self.h
+  end;
 };
 
-local Rectangle = new 'Rectangle' ('red', 3, 4)
-print(Rectangle:getColor()) -- red
-print(Rectangle:area())     -- 12
+local R = new 'Rect' ('green', 2, 5)
+print(R:getColor(), R:area()) -- green 10
 ```
 
-## 🔗 Exemplo 4 — bind (fechando contexto)
-O helper `bind(func, self)` (já disponível neste projeto) cria um closure que injeta `self` ao chamar a função — útil para callbacks e integração com bibliotecas de eventos.
+3) Bind (callbacks)
 
 ```lua
 class 'Emitter' {
-    constructor = function (self)
-        self.handlers = {}
-        return self
-    end;
+  constructor = function(self)
+    self.h = {}
+    return self
+  end;
 
-    on = function (self, name, fn)
-        self.handlers[name] = self.handlers[name] or {}
-        table.insert(self.handlers[name], fn)
-    end;
+  on = function(self, name, fn)
+    self.h[name] = self.h[name] or {}
+    table.insert(self.h[name], fn)
+  end;
 
-    emit = function (self, name, ...)
-        local hs = self.handlers[name]; if not hs then return end
-        for _, fn in ipairs(hs) do fn(...) end
-    end;
+  emit = function(self, name, ...)
+    for _, fn in ipairs(self.h[name] or {}) do
+      fn(...)
+    end
+  end;
 };
 
-local Emitter = new 'Emitter' ()
+local E = new 'Emitter' ()
 
 class 'Greeter' {
-    constructor = function (self, name, emitter)
-        self.name = name
-        emitter:on('hello', bind(self.onHello, self))
-        return self
-    end;
+  constructor = function(self, name, emitter)
+    self.name = name
+    emitter:on('hi', bind(self.hi, self))
+    return self
+  end;
 
-    onHello = function (self, from)
-        print(("Hi %s! I'm %s."):format(from, self.name))
-    end;
+  hi = function(self, from)
+    print('Hi', from, '->', self.name)
+  end;
 };
 
-local Greeter = new 'Greeter' ('Alice', Emitter)
-Emitter:emit('hello', 'Bob')
+local g = new 'Greeter' ('Bob', E)
+E:emit('hi', 'Alice')
 ```
 
-> Nota: Em MTA:SA, você pode usar `bind(self.onClick, self)` com `addEventHandler`. Mas o `bind` é genérico e funciona em qualquer ambiente Lua.
-
-## ✨ Exemplo 5 — Metamethods e constructor
-Um exemplo simples mostrando um `constructor` que imprime quando a classe é carregada e um metamethods `__tostring`.
+4) Metamethods + constructor
 
 ```lua
 class 'Example' :metamethods {
-    __tostring = function(self)
-        return 'Hello World'
-    end
+  __tostring = function(self)
+    return 'Hello World'
+  end
 } {
-    constructor = function(self)
-        print('LOADED')
-        return self
-    end;
+  constructor = function(self)
+    print('LOADED')
+    return self
+  end;
 };
 
-local Example = new 'Example' ()
-print(Example) -- output: 'LOADED' (from constructor) seguido por 'Hello World' (via __tostring)
+local ex = new 'Example' ()
+print(ex) -- LOADED \n Hello World
 ```
 
-## 🎮 Exemplo 6 — Uso de `bind` com `addEventHandler` (MTA:SA)
-No MTA:SA a função `addEventHandler` recebe um handler; `bind` é útil para manter o `self` correto em métodos de instância.
+5) Interfaces (declaração)
 
 ```lua
--- suponha que `myGuiButton` seja um elemento GUI já criado
-class 'Button' {
-    constructor = function(self, element)
-        self.element = element
-        -- registra o handler com o método ligado ao contexto da instância
-        addEventHandler('onClientGUIClick', element, bind(self.onClick, self), false)
-        return self
-    end;
-
-    onClick = function(self, button)
-        print('Botão clicado por', button)
-    end;
-};
-
-local btn = new 'Button' (myGuiButton)
-```
-
-## 🔐 Interfaces e `implements`
-Este projeto pode suportar um sistema simples de interfaces (contratos) para validar que uma classe implementa certos métodos. A ideia básica:
-
-- `interface(name, { 'metodo1', 'metodo2' })` registra o contrato.
-- `class 'X' :implements 'IExample' { ... }` valida automaticamente que todos os métodos exigidos por `IExample` existem na classe (ou na sua super).
-
-Exemplo
-
-```lua
--- declara interfaces
 interface('IPrintable', {
-    ['toString'] = 'function',
+  ['toString'] = 'function'
 })
 
--- declara e valida na criação
 class 'Person' :implements 'IPrintable' {
-    constructor = function(self, name)
-        self.name = name
-        return self
-    end;
+  constructor = function(self, n)
+    self.n = n
+    return self
+  end;
 
-    toString = function(self)
-        return 'Person: ' .. tostring(self.name)
-    end;
+  toString = function(self)
+    return 'Person: ' .. tostring(self.n)
+  end;
 };
-
-local Person = new 'Person' ('Ana')
-print(Person:toString()) -- Person: Ana
 ```
 
-## API de Referência
-- `class(name)`
-  - Cria (ou retorna) um “builder” para definir a classe `name`.
-  - Formas de uso:
-    - `class 'Nome' { ... }`
-        - `class 'Filha' :extends 'Base' { ... }`
-        - `class 'Filha' :implements 'IExample' { ... }` (valida contrato)
-        - `class 'Filha' :extends 'Base' :implements 'I1' { ... }` (herança + interfaces)
+## 🚀 API resumida
 
-- `new(name)`
-  - Retorna uma função que executa o `constructor` (se existir) e retorna a própria tabela da classe.
-  - Uso recomendado: `local Nome = new 'Nome' (args...)`
+- `class 'Name' { ... }` — define a classe
+- `:extends 'Base'` — herança
+- `:implements 'I'` — valida interface registrada
+- `new 'Name' (args...)` — inicializa/obtém a classe (chama `constructor` se presente)
+- `bind(func, self)` — cria closure que chama `func(self, ...)`
 
-- `bind(func, self)`
-  - Devolve uma função que chama `func(self, ...)`.
+## Dicas rápidas
 
-- `interface(name, methods)`
-    - Registra uma interface (contrato) com uma lista de métodos obrigatórios: `interface('IName', { 'm1', 'm2' })`.
+- Use `local X = new 'X' (...)` para não poluir o escopo global.
+- Retorne `self` do `constructor` para permitir encadeamento.
 
-## Dicas e Boas Práticas
-- Prefira `local Class = new 'Class' (...)` para evitar poluir o escopo global do seu script.
-- Mantenha métodos coesos: retorne `self` quando fizer sentido encadear operações.
-- Para herança, reutilize campos da base conforme necessário. Se quiser um helper `super`, você pode adicionar um método utilitário no seu projeto para padronizar a chamada do construtor da base.
+## Contribuição & Licença
 
-## Contribuição
-Sugestões e PRs são bem-vindos! Abra uma issue descrevendo sua ideia ou envie diretamente uma melhoria.
-
-## Licença
-MIT License.
-
-## Créditos
-- Lead Developer: Thigas Development (draconzx)
+- PRs e sugestões são bem-vindos — abra uma issue primeiro se for uma mudança grande.
+- MIT
