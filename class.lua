@@ -1,12 +1,16 @@
 local classes, interfaces = { }, { };
 
-local function create (name, struct, super, implements)
+local function create (name, struct, super, implements, metamethods)
     if (classes[name]) then
         error ('Class ' .. name .. ' already exists.');
     end
 
-    local newClass = { };
-    newClass.__name, newClass.__super, newClass.__implements = name, super, implements;
+    local newClass = {
+        __name = name,
+        __super = super,
+        __implements = implements,
+        __metamethods = metamethods,
+    };
 
     for key, value in pairs (struct) do
         if (super) and (type (super[key]) == 'function') then
@@ -54,6 +58,7 @@ function class (name)
     local options = {
         super = nil,
         implements = { },
+        metamethods = nil,
     };
 
     local modifiers = {
@@ -65,6 +70,12 @@ function class (name)
 
         implements = function (self, interface)
             options.implements[#options.implements + 1] = interface;
+
+            return self;
+        end,
+
+        metamethod = function (self, metamethods)
+            options.metamethods = metamethods;
 
             return self;
         end,
@@ -87,7 +98,7 @@ function class (name)
                 if (classes[name]) then
                     return false;
                 end
-                return create (name, methods, options.super, options.implements);
+                return create (name, methods, options.super, options.implements, options.metamethods);
             end,
         }
     );
@@ -111,7 +122,14 @@ function new (name)
     end
 
     return function (...)
-        local instance = setmetatable ({ }, { __index = class });
+        local meta = { __index = class };
+        if (class.__metamethods) then
+            for key, value in pairs (class.__metamethods) do
+                meta[key] = value;
+            end
+        end
+
+        local instance = setmetatable ({ }, meta);
 
         local consType = type (instance.constructor);
         if (consType == 'function') then
