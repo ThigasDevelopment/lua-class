@@ -70,15 +70,20 @@ end
 function new (name)
     local class = classes[name];
     if (not class) then
-        return false;
+        return function ()
+            return false;
+        end
     end
 
     return function (...)
-        local constructorType = type (class['constructor']);
-        if (constructorType == 'function') then
-            class:constructor (...);
+        local instance = setmetatable ({ }, { __index = class });
+
+        local consType = type (instance.constructor);
+        if (consType == 'function') then
+            return instance:constructor (...);
         end
-        return class;
+
+        return instance;
     end
 end
 
