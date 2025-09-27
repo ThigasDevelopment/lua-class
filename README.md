@@ -144,14 +144,53 @@ Emitter:emit('hello', 'Bob')
 
 > Nota: Em MTA:SA, você pode usar `bind(self.onClick, self)` com `addEventHandler`. Mas o `bind` é genérico e funciona em qualquer ambiente Lua.
 
+## ✨ Exemplo 5 — Metamethods e constructor
+Um exemplo simples mostrando um `constructor` que imprime quando a classe é carregada e um metamethod `__tostring`.
+
+```lua
+class 'Example' :metamethod {
+    __tostring = function(self)
+        return 'Hello World'
+    end
+} {
+    constructor = function(self)
+        print('LOADED')
+        return self
+    end;
+};
+
+local Example = new 'Example' ()
+print(Example) -- output: 'LOADED' (from constructor) seguido por 'Hello World' (via __tostring)
+```
+
+## 🎮 Exemplo 6 — Uso de `bind` com `addEventHandler` (MTA:SA)
+No MTA:SA a função `addEventHandler` recebe um handler; `bind` é útil para manter o `self` correto em métodos de instância.
+
+```lua
+-- suponha que `myGuiButton` seja um elemento GUI já criado
+class 'Button' {
+    constructor = function(self, element)
+        self.element = element
+        -- registra o handler com o método ligado ao contexto da instância
+        addEventHandler('onClientGUIClick', element, bind(self.onClick, self), false)
+        return self
+    end;
+
+    onClick = function(self, button)
+        print('Botão clicado por', button)
+    end;
+};
+
+local btn = new 'Button' (myGuiButton)
+```
+
 ## 🔐 Interfaces e `implements`
 Este projeto pode suportar um sistema simples de interfaces (contratos) para validar que uma classe implementa certos métodos. A ideia básica:
 
 - `interface(name, { 'metodo1', 'metodo2' })` registra o contrato.
 - `class 'X' :implements 'IExample' { ... }` valida automaticamente que todos os métodos exigidos por `IExample` existem na classe (ou na sua super).
-- `implements('X', 'IExample')` é a versão separada que valida após a criação.
 
-Exemplo A — usando `:implements` no builder
+Exemplo
 
 ```lua
 -- declara interfaces
@@ -175,32 +214,6 @@ local Person = new 'Person' ('Ana')
 print(Person:toString()) -- Person: Ana
 ```
 
-Exemplo B — usando `implements('Class', ...)` depois da declaração
-
-```lua
-interface('IComparable', {
-    ['compare'] = 'function',
-})
-
-class 'Point' {
-    constructor = function(self, x, y)
-        self.x, self.y = x, y
-        return self
-    end;
-
-    compare = function(self, other)
-        if self.x == other.x and self.y == other.y then return 0 end
-        return (self.x < other.x) and -1 or 1
-    end;
-};
-
--- valida que Point cumpre IComparable
-implements('Point', 'IComparable')
-
-local Point = new 'Point' (1, 2)
-print(Point:compare(new 'Point'(2,2))) -- -1
-```
-
 ## API de Referência
 - `class(name)`
   - Cria (ou retorna) um “builder” para definir a classe `name`.
@@ -219,9 +232,6 @@ print(Point:compare(new 'Point'(2,2))) -- -1
 
 - `interface(name, methods)`
     - Registra uma interface (contrato) com uma lista de métodos obrigatórios: `interface('IName', { 'm1', 'm2' })`.
-
-- `implements(className, ...)`
-    - Valida que a classe especificada implementa as interfaces fornecidas (ex.: `implements('Point', 'IComparable')`).
 
 ## Dicas e Boas Práticas
 - Prefira `local Class = new 'Class' (...)` para evitar poluir o escopo global do seu script.
