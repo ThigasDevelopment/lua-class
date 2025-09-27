@@ -148,7 +148,7 @@ Emitter:emit('hello', 'Bob')
 Um exemplo simples mostrando um `constructor` que imprime quando a classe é carregada e um metamethod `__tostring`.
 
 ```lua
-class 'Example' :metamethod {
+class 'Example' :metamethods {
     __tostring = function(self)
         return 'Hello World'
     end
