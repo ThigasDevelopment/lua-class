@@ -125,9 +125,9 @@ print(ex) -- LOADED \n Hello World
 5) Interfaces (declaração)
 
 ```lua
-interface('IPrintable', {
-  ['toString'] = 'function'
-})
+interface 'IPrintable' {
+  ['toString'] = 'function',
+}
 
 class 'Person' :implements 'IPrintable' {
   constructor = function(self, n)

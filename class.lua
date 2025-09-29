@@ -104,13 +104,19 @@ function class (name)
     );
 end
 
-function interface (name, fields)
-    if (interfaces[name]) then
-        return interfaces[name];
+function interface (name)
+    local interface = interfaces[name];
+    if (interface) then
+        return function ()
+            return interface;
+        end
     end
 
-    interfaces[name] = fields;
-    return interfaces[name];
+    return function (struct)
+        interfaces[name] = struct;
+
+        return interfaces[name];
+    end
 end
 
 function new (name)
