@@ -13,8 +13,8 @@ local function create (name, struct, options)
     };
 
     for key, value in pairs (struct) do
-        if (options.super) and (type (options.super[key]) == 'function') then
-            local method = options.super[key];
+        if (newClass.__super) and (type (newClass.__super[key]) == 'function') then
+            local method = newClass.__super[key];
             newClass[key] = function (self, ...)
                 local old = rawget (self, 'super');
                 self.super = function (t, ...)
@@ -31,8 +31,8 @@ local function create (name, struct, options)
         end
     end
 
-    if (options.super) then
-        setmetatable (newClass, { __index = options.super });
+    if (newClass.__super) then
+        setmetatable (newClass, { __index = newClass.__super });
     end
 
     if (#newClass.__implements > 0) then
@@ -149,7 +149,9 @@ end
 function bind (func, self)
     local funcType = type (func);
     if (funcType ~= 'function') then
-        return false;
+        return function ()
+            return false;
+        end
     end
 
     return function (...)
