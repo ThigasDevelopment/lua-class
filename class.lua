@@ -1,20 +1,20 @@
 local classes, interfaces = { }, { };
 
-local function create (name, struct, super, implements, metamethods)
+local function create (name, struct, options)
     if (classes[name]) then
         error ('Class ' .. name .. ' already exists.');
     end
 
     local newClass = {
         __name = name,
-        __super = super,
-        __implements = implements,
-        __metamethods = metamethods,
+        __super = options.super,
+        __implements = options.implements,
+        __metamethods = options.metamethods,
     };
 
     for key, value in pairs (struct) do
-        if (super) and (type (super[key]) == 'function') then
-            local method = super[key];
+        if (options.super) and (type (options.super[key]) == 'function') then
+            local method = options.super[key];
             newClass[key] = function (self, ...)
                 local old = rawget (self, 'super');
                 self.super = function (t, ...)
@@ -31,8 +31,8 @@ local function create (name, struct, super, implements, metamethods)
         end
     end
 
-    if (super) then
-        setmetatable (newClass, { __index = super });
+    if (options.super) then
+        setmetatable (newClass, { __index = options.super });
     end
 
     if (#newClass.__implements > 0) then
@@ -98,7 +98,7 @@ function class (name)
                 if (classes[name]) then
                     return false;
                 end
-                return create (name, methods, options.super, options.implements, options.metamethods);
+                return create (name, methods, options);
             end,
         }
     );
