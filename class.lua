@@ -158,3 +158,16 @@ function bind (func, self)
         return func (self, ...);
     end
 end
+
+function enum (names)
+    local t = { };
+    if (type (names) ~= 'table') then
+        return t;
+    end
+
+    for i = 0, (#names - 1) do
+        local name = names[i + 1];
+        t[name] = i;
+    end
+    return t;
+end
