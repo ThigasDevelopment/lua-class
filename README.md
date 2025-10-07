@@ -141,13 +141,25 @@ class 'Person' :implements 'IPrintable' {
 };
 ```
 
+6) Enums
+```lua
+local Colors = enum {
+  'RED',
+  'GREEN',
+};
+
+print (Colors.RED) -- -> 0.
+print (Colors.GREEN) -- -> 1.
+```
+
 ## 🚀 API resumida
 
 - `class 'Name' { ... }` — define a classe
-- `:extends 'Base'` — herança
-- `:implements 'I'` — valida interface registrada
+- `: extends 'Base'` — herança
+- `: implements 'I'` — valida interface registrada
 - `new 'Name' (args...)` — inicializa/obtém a classe (chama `constructor` se presente)
-- `bind(func, self)` — cria closure que chama `func(self, ...)`
+- `bind (func, self)` — cria closure que chama `func(self, ...)`
+- `enum (object)` - cria variaveis com indices numericos
 
 ## Dicas rápidas
 
