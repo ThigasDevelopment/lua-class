@@ -130,8 +130,18 @@ function new (name)
     return function (...)
         local meta = { __index = class };
         if (class.__metamethods) then
+            local blockeds = {
+                ['__index'] = true,
+                ['__newindex'] = true,
+            };
+
             for key, value in pairs (class.__metamethods) do
-                meta[key] = value;
+                local blocked = blockeds[key];
+                if (blocked) then
+                    error ('Cannot override metamethod ' .. key .. '.');
+                else
+                    meta[key] = value;
+                end
             end
         end
 
