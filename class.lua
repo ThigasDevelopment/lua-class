@@ -149,7 +149,7 @@ function new (name)
 
         local consType = type (instance.constructor);
         if (consType == 'function') then
-            return instance:constructor (...);
+            instance:constructor (...);
         end
 
         return instance;
