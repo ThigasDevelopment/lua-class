@@ -81,27 +81,25 @@ function class (name)
         end,
     };
 
-    return setmetatable ({ },
-        {
-            __index = function (self, key)
-                if (modifiers[key]) then
-                    return modifiers[key];
-                end
+    return setmetatable ({ }, {
+        __index = function (self, key)
+            if (modifiers[key]) then
+                return modifiers[key];
+            end
 
-                if (classes[name]) then
-                    return classes[name][key];
-                end
+            if (classes[name]) then
+                return classes[name][key];
+            end
+            return false;
+        end,
+
+        __call = function (self, methods)
+            if (classes[name]) then
                 return false;
-            end,
-
-            __call = function (self, methods)
-                if (classes[name]) then
-                    return false;
-                end
-                return create (name, methods, options);
-            end,
-        }
-    );
+            end
+            return create (name, methods, options);
+        end,
+    });
 end
 
 function interface (name)
