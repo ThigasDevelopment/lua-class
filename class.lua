@@ -131,6 +131,7 @@ function new (name)
         local meta = { __index = class };
         if (class.__metamethods) then
             local blockeds = {
+                ['__call'] = true,
                 ['__index'] = true,
                 ['__newindex'] = true,
             };
