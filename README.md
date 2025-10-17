@@ -125,11 +125,21 @@ print(ex) -- LOADED \n Hello World
 5) Interfaces (declaração)
 
 ```lua
-interface 'IPrintable' {
-  ['toString'] = 'function',
+interface 'IObject' {
+  ['applyValue'] = 'number',
 }
 
-class 'Person' :implements 'IPrintable' {
+interface 'IPrintable' {
+  ['toString'] = 'function',
+
+  ['objectMethod'] = 'IObject',
+}
+
+class 'Person' : implements 'IPrintable' {
+  objectMethod = {
+    applyValue = -1,
+  },
+
   constructor = function(self, n)
     self.n = n
     return self
