@@ -35,19 +35,52 @@ local function create (name, struct, options)
         setmetatable (newClass, { __index = newClass.__super });
     end
 
-    if (#newClass.__implements > 0) then
-        for _, interfaceName in pairs (newClass.__implements) do
-            local interface = interfaces[interfaceName];
-            if (not interface) then
-                error ('Interface ' .. interfaceName .. ' not found.');
+    local isLuaType = {
+        ['nil'] = true,
+
+        ['table'] = true,
+        
+        ['number'] = true,
+        ['string'] = true,
+        ['thread'] = true,
+
+        ['boolean'] = true,
+        
+        ['function'] = true,
+        ['userdata'] = true,
+    };
+
+    local function checkImplements (name, check, object)
+        local class, interface = newClass, interfaces[name];
+        if (not interface) then
+            error ('Interface \'' .. name .. '\' does not exist.');
+        end
+
+        if (check) then
+            local objectType = type (object);
+            if (objectType ~= 'table') then
+                error ('Class \'' .. newClass.__name .. '\' does not implement interface \'' .. name .. '\'. Expected \'table\', got \'' .. objectType .. '\'.');
             end
 
-            for key, value in pairs (interface) do
-                if (type (newClass[key]) ~= value) then
-                    error ('Class ' .. name .. ' does not implement interface ' .. interfaceName .. ' correctly. Field "' .. key .. '" is of type "' .. type (newClass[key]) .. '", expected "' .. value .. '".');
+            class = object;
+        end
+
+        for method, value in pairs (interface) do
+            local isLua = isLuaType[value];
+            if (isLua) then
+                local realType = type (class[method]);
+                if (realType ~= value) then
+                    error ('Class \'' .. newClass.__name .. '\' does not implement method \'' .. method .. '\' of interface \'' .. name .. '\'. Expected type \'' .. value .. '\', got \'' .. realType .. '\'.');
                 end
+            else
+                checkImplements (value, true, newClass[method]);
             end
         end
+        return true;
+    end
+    
+    for _, interfaceName in pairs (newClass.__implements) do
+        checkImplements (interfaceName);
     end
 
     classes[name] = newClass;
